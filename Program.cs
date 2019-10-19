@@ -1,72 +1,33 @@
 ﻿using System;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using AnswerCodenation;
+using Newtonsoft.Json;
+using Utils;
 
 namespace codenation_criptografia_kroton
 {
     class Program
     {
-        static void Main(string[] args)
+        static async System.Threading.Tasks.Task Main(string[] args)
         {
-            var resultEncrypt = JulioCesarEncryption(" a ligeira raposa marrom saltou sobre o cachorro cansado", 5);
-            System.Console.WriteLine(resultEncrypt);
-            byte[] data = Encoding.ASCII.GetBytes(resultEncrypt);
+            AnswerRepository requestCodenation = new AnswerRepository("https://api.codenation.dev/v1/challenge/dev-ps/");
+            var generateDataObjectAux = await requestCodenation.GetGenerateDatatAsync<Answer>("5a75c604c522ee723768438b45e9b7b86d8b7145");
+            FileHandling.SaveFileJsonObject("answer", generateDataObjectAux);
+        
+            Answer generateDataObject = FileHandling.OpenFileJsonObject<Answer>("answer");
 
-            foreach (var item in data)
-            {
-                System.Console.WriteLine(item);
-            }
+            int descryptionInterval = generateDataObject.numero_casas;
+            string textToDescrypt = generateDataObject.cifrado;
+            generateDataObject.decifrado = DescryptCodenation.JulioCesarDescryptionTool(textToDescrypt, descryptionInterval);
+            generateDataObject.resumo_criptografico = DescryptCodenation.ConvertSHA1(generateDataObject.decifrado);
 
+            FileHandling.SaveFileJsonObject("answer", generateDataObject);
 
-            System.Console.WriteLine(data);
-            byte[] result;
-            SHA1 shaM = new SHA1Managed();
-            result = shaM.ComputeHash(data);
-            SHA1 sha = new SHA1CryptoServiceProvider(); 
-            result = sha.ComputeHash(data);
-
-            System.Console.WriteLine(result);
-            string hashString = string.Empty;
-            foreach (var item in result)
-            {
-                hashString+=string.Format("{0:x2}", item);
-            }
-
-            System.Console.WriteLine(hashString);
-        }
-
-        static string JulioCesarEncryption(string textToEncrypt, int encryptionInterval)
-        {
-
-            StringBuilder textEncrypt = new StringBuilder();
-
-            char[] characterToEncryptArray = textToEncrypt.ToLower().ToCharArray();
-
-            foreach (var character in characterToEncryptArray)
-            {
-                textEncrypt.Append(EncryptionRule(character, encryptionInterval));
-            }
-
-            return textEncrypt.ToString();
-        }
-        static char EncryptionRule(char characterToEncrypt, int encryptionInterval)
-        {
-            int encryptedCharacter = 0;
-            int asciiCharacterNumber = Convert.ToInt32(characterToEncrypt);
-            int normalizedEncryptionInterval = encryptionInterval % 26;
-            System.Console.WriteLine($"Resto: {normalizedEncryptionInterval}");
-
-            if (asciiCharacterNumber >= 97 && asciiCharacterNumber <= 122)
-            {
-                encryptedCharacter = (asciiCharacterNumber + normalizedEncryptionInterval) > 122 ? (asciiCharacterNumber - 26 + normalizedEncryptionInterval) : (asciiCharacterNumber + normalizedEncryptionInterval);
-                return Convert.ToChar(encryptedCharacter);
-            }
-            else
-            {
-                return characterToEncrypt;
-            }
-
-
+            System.Console.WriteLine(generateDataObject);
         }
     }
 }
